@@ -19,6 +19,7 @@
  *
  */
 
+#include "srsran/AO_general.h"
 #include "srsenb/hdr/stack/rrc/rrc_ue.h"
 #include "srsenb/hdr/common/common_enb.h"
 #include "srsenb/hdr/stack/rrc/mac_controller.h"
@@ -62,6 +63,17 @@ bool rrc::ue::init_pucch()
   // Allocate PUCCH resources for PCell
   return ue_cell_list.init_pucch_pcell();
 }
+
+// AO start
+uint32_t rrc::ue::get_tmsi()
+{
+  return m_tmsi;
+}
+bool rrc::ue::ue_has_tmsi()
+{
+  return has_tmsi;
+}
+// AO end
 
 int rrc::ue::init()
 {
@@ -475,6 +487,12 @@ void rrc::ue::handle_rrc_con_req(rrc_conn_request_s* msg)
     m_tmsi   = (uint32_t)msg_r8->ue_id.s_tmsi().m_tmsi.to_number();
     has_tmsi = true;
 
+    // AO Start    
+    std::stringstream ss;
+    ss << "0x" << std::hex << m_tmsi << ",UL_Conn_Setup_Req";
+    AO_LogsHelper::add_lookup_line(parent->rnti_to_tmsi_file, rnti, ss.str());
+    // AO End
+
     // Make sure that the context does not already exist
     for (auto& user : parent->users) {
       if (user.first != rnti && user.second->has_tmsi && user.second->mmec == mmec && user.second->m_tmsi == m_tmsi) {
@@ -558,6 +576,19 @@ void rrc::ue::handle_rrc_con_setup_complete(rrc_conn_setup_complete_s* msg, srsr
   // TODO: if(msg->registered_mme_present) - the indicated MME should be used from a pool
 
   pdu->N_bytes = msg_r8->ded_info_nas.size();
+  // AO start
+  if (msg_r8->ded_info_nas.size() > 20)
+        { 
+          std::stringstream ss; 
+          ss << "0x" << std::hex << (int) msg_r8->ded_info_nas.data()[17] 
+          << (int) msg_r8->ded_info_nas.data()[18] 
+          << (int) msg_r8->ded_info_nas.data()[19] 
+          << (int) msg_r8->ded_info_nas.data()[20]
+          << ",UL_Conn_Setup_Complete";
+
+          AO_LogsHelper::add_lookup_line(parent->rnti_to_tmsi_file, rnti, ss.str());
+        }  
+  // AO end
   memcpy(pdu->msg, msg_r8->ded_info_nas.data(), pdu->N_bytes);
 
   // Signal MAC scheduler that configuration was successful
@@ -930,6 +961,20 @@ void rrc::ue::send_connection_reconf(srsran::unique_byte_buffer_t pdu,
   std::string octet_str;
   send_dl_dcch(&dl_dcch_msg, std::move(pdu), &octet_str);
 
+    // AO start
+    if (recfg_r8.ded_info_nas_list.size() == 1)
+    if(recfg_r8.ded_info_nas_list[0].size() == 74){
+          std::stringstream ss; 
+          ss << "0x" << std::hex << (int) recfg_r8.ded_info_nas_list[0].data()[70] 
+          << (int) recfg_r8.ded_info_nas_list[0].data()[71]
+          << (int)recfg_r8.ded_info_nas_list[0].data()[72]
+          << (int)recfg_r8.ded_info_nas_list[0].data()[73]
+          << ",DL_Send_Conn_Reconfig";
+
+          AO_LogsHelper::add_lookup_line(parent->rnti_to_tmsi_file, rnti, ss.str());
+        }
+    // AO end
+
   // Log event.
   asn1::json_writer json_writer;
   dl_dcch_msg.to_json(json_writer);
@@ -1007,6 +1052,11 @@ void rrc::ue::handle_ue_info_resp(const asn1::rrc::ue_info_resp_r9_s& msg, srsra
                                        asn1::octstring_to_string(pdu->msg, pdu->N_bytes),
                                        json_writer.to_string(),
                                        rnti);
+    std::stringstream ss;
+    ss << "0x" << std::hex << rnti << std::dec << "," << (int) resp_r9.rlf_report_r9.meas_result_last_serv_cell_r9.rsrp_result_r9;
+    ss << "," << (int) resp_r9.rlf_report_r9.meas_result_last_serv_cell_r9.rsrq_result_r9;
+    AO_LogsHelper::add_time_stamp_line(parent->rrc_info_resp_file, ss.str());
+
   }
   if (resp_r9.rach_report_r9_present) {
     // TODO: Handle RACH-Report

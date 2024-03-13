@@ -22,6 +22,7 @@
 #ifndef SRSENB_RRC_H
 #define SRSENB_RRC_H
 
+#include "srsran/AO_general.h"
 #include "rrc_bearer_cfg.h"
 #include "rrc_cell_cfg.h"
 #include "rrc_metrics.h"
@@ -170,6 +171,10 @@ public:
   class ue;
 
 private:
+  // AO - Files to log RNTI to TMSI mapping
+  std::ofstream rnti_to_tmsi_file;
+  std::ofstream rrc_info_resp_file;
+  // AO - End
   // args
   srsran::task_sched_handle task_sched;
   enb_bearer_manager&       bearer_manager;

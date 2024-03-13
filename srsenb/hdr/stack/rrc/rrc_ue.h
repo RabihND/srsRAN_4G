@@ -175,6 +175,11 @@ public:
 
   bool is_csfb = false;
 
+  // AO start
+  uint32_t get_tmsi();
+  bool ue_has_tmsi();
+  // AO end
+
 private:
   srsran::unique_timer activity_timer; // for basic DL/UL activity timeout
 

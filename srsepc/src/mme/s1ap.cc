@@ -19,6 +19,7 @@
  *
  */
 
+#include "srsran/AO_general.h"
 #include "srsepc/hdr/mme/s1ap.h"
 #include "srsran/asn1/gtpc.h"
 #include "srsran/common/bcd_helpers.h"
@@ -62,6 +63,10 @@ void s1ap::cleanup(void)
 
 int s1ap::init(const s1ap_args_t& s1ap_args)
 {
+  // AO start
+  // Open the TMSI to IMSI file
+  AO_LogsHelper::open_lookup_file(tmsi_to_imsi_log_file, TMSI_TO_IMSI_FILE_NAME);
+  // AO end
   m_s1ap_args = s1ap_args;
   srsran::s1ap_mccmnc_to_plmn(s1ap_args.mcc, s1ap_args.mnc, &m_plmn);
 
@@ -105,6 +110,7 @@ int s1ap::init(const s1ap_args_t& s1ap_args)
 
 void s1ap::stop()
 {
+  AO_LogsHelper::close_lookup_file(tmsi_to_imsi_log_file);
   if (m_s1mme != -1) {
     close(m_s1mme);
   }
@@ -562,6 +568,11 @@ uint32_t s1ap::allocate_m_tmsi(uint64_t imsi)
 
   m_tmsi_to_imsi.emplace(m_tmsi, imsi);
   m_logger.debug("Allocated M-TMSI 0x%x to IMSI %015" PRIu64 ",", m_tmsi, imsi);
+  // AO
+  char imsi_str[20];
+  sprintf(imsi_str,"%015" PRIu64 ,imsi);
+  AO_LogsHelper::add_lookup_line(tmsi_to_imsi_log_file, m_tmsi, imsi_str);
+  // AO
   return m_tmsi;
 }
 

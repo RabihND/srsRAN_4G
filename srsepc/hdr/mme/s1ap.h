@@ -21,6 +21,7 @@
 #ifndef SRSEPC_S1AP_H
 #define SRSEPC_S1AP_H
 
+#include "srsran/AO_general.h"
 #include "mme_gtpc.h"
 #include "nas.h"
 #include "s1ap_ctx_mngmt_proc.h"
@@ -129,6 +130,9 @@ public:
   virtual bool expire_nas_timer(enum nas_timer_type type, uint64_t imsi);
 
 private:
+  // AO start
+  std::ofstream tmsi_to_imsi_log_file;
+  // AO end
   s1ap();
   virtual ~s1ap();
 

@@ -19,6 +19,7 @@
  *
  */
 
+#include "srsran/AO_general.h"
 #include "srsenb/hdr/stack/rrc/rrc.h"
 #include "srsenb/hdr/stack/mac/sched_interface.h"
 #include "srsenb/hdr/stack/rrc/rrc_cell_cfg.h"
@@ -130,6 +131,11 @@ int32_t rrc::init(const rrc_cfg_t&       cfg_,
     cfg.srb2_cfg.rlc_cfg.to_json(js);
     logger.debug("SRB2 configuration: %s", js.to_string().c_str());
   }
+  // AO
+  // Open the RNTI to TMSI file
+  AO_LogsHelper::open_lookup_file(rnti_to_tmsi_file, RNTI_TO_TMSI_FILE_NAME);
+  AO_LogsHelper::open_lookup_file(rrc_info_resp_file, RRC_INFO_RESP_FILE);
+  // AO
   return SRSRAN_SUCCESS;
 }
 
@@ -141,6 +147,8 @@ void rrc::stop()
     rx_pdu_queue.push_blocking(std::move(p));
   }
   users.clear();
+  AO_LogsHelper::close_lookup_file(rnti_to_tmsi_file);
+  AO_LogsHelper::close_lookup_file(rrc_info_resp_file);
 }
 
 /*******************************************************************************

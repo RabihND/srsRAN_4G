@@ -23,6 +23,7 @@
 
 #include "srsran/common/threads.h"
 #include "srsran/srsran.h"
+#include "srsran/AO_general.h"
 
 #include "srsenb/hdr/phy/lte/cc_worker.h"
 
@@ -63,6 +64,8 @@ cc_worker::cc_worker(srslog::basic_logger& logger) : logger(logger)
 
 cc_worker::~cc_worker()
 {
+  AO_LogsHelper::close_lookup_file(pusch_snr_file);
+  AO_LogsHelper::close_lookup_file(pucch_snr_file);
   srsran_softbuffer_tx_free(&temp_mbsfn_softbuffer);
   srsran_enb_dl_free(&enb_dl);
   srsran_enb_ul_free(&enb_ul);
@@ -94,6 +97,8 @@ void cc_worker::init(phy_common* phy_, uint32_t cc_idx_)
   uint32_t         nof_prb    = phy_->get_nof_prb(cc_idx);
   uint32_t         sf_len     = SRSRAN_SF_LEN_PRB(nof_prb);
   srsran_cfr_cfg_t cfr_config = phy_->get_cfr_config();
+  AO_LogsHelper::open_lookup_file(pusch_snr_file, PUSCH_SNR_FILE);
+  AO_LogsHelper::open_lookup_file(pucch_snr_file, PUCCH_SNR_FILE);
 
   // Init cell here
   for (uint32_t p = 0; p < phy->get_nof_ports(cc_idx); p++) {
@@ -376,6 +381,25 @@ bool cc_worker::decode_pusch_rnti(stack_interface_phy_lte::ul_sched_grant_t& ul_
                             enb_ul.chest_res.epre_dBfs - phy->params.rx_gain_offset,
                             enb_ul.chest_res.snr_db,
                             pusch_res.avg_iterations_block);
+    // AO start
+    std::stringstream ss;
+    ss << std::hex << "0x" << rnti << std::dec;
+    if (not isnan(snr_db) and not iszero(snr_db)) {
+       ss << "," << snr_db;
+    }
+    else {
+      ss  << ",n/a";
+    }
+    ss 
+    << "," << pusch_res.crc 
+    << "," << pusch_res.epre_dbfs 
+    << "," << pusch_res.evm
+    << "," << ul_cfg.pusch.grant.tb.tbs 
+    << "," << ul_cfg.pusch.grant.nof_re 
+    << "," << ul_cfg.pusch.grant.tb.nof_bits;
+    std::string s = ss.str();
+    AO_LogsHelper::add_time_stamp_line(pusch_snr_file, s);
+    // AO end
   }
   return true;
 }
@@ -441,9 +465,21 @@ int cc_worker::decode_pucch()
         // Decode PUCCH
         if (srsran_enb_ul_get_pucch(&enb_ul, &ul_sf, &ul_cfg.pucch, &pucch_res)) {
           Error("Error getting PUCCH");
+          // AO start
+          std::stringstream ss;
+          ss << "0x" << std::hex << rnti << std::dec << "," << pucch_res.snr_db << "," << pucch_res.detected;
+          std::string s = ss.str();
+          AO_LogsHelper::add_time_stamp_line(pucch_snr_file, s);
+          // AO end
           continue;
         }
 
+        // AO start
+        std::stringstream ss;
+        ss << "0x" << std::hex << rnti << std::dec << "," << pucch_res.snr_db << "," << pucch_res.detected;
+        std::string s = ss.str();
+        AO_LogsHelper::add_time_stamp_line(pucch_snr_file, s);
+        // AO end
         // Send UCI data to MAC
         if (phy->ue_db.send_uci_data(tti_rx, rnti, cc_idx, ul_cfg.pucch.uci_cfg, pucch_res.uci_data) < SRSRAN_SUCCESS) {
           Error("Error sending UCI data for RNTI %x, CC %d", rnti, cc_idx);

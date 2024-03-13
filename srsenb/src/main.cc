@@ -19,6 +19,7 @@
  *
  */
 
+#include "srsran/AO_general.h"
 #include <poll.h>
 #include <signal.h>
 #include <stdio.h>
@@ -626,7 +627,9 @@ int main(int argc, char* argv[])
   metrics_stdout                     metrics_screen;
 
   cout << "---  Software Radio Systems LTE eNodeB  ---" << endl << endl;
+  cout << endl << "---  Modified Version for CHRONOS  ---" << endl << endl;
 
+  AO_LogsHelper::create_log_files();
   srsran_debug_handle_crash(argc, argv);
   parse_args(&args, argc, argv);
 

@@ -22,6 +22,7 @@
 #include <pthread.h>
 #include <string.h>
 
+#include "srsran/AO_general.h"
 #include "srsenb/hdr/stack/mac/mac.h"
 #include "srsran/adt/pool/obj_pool.h"
 #include "srsran/common/rwlock_guard.h"
@@ -89,6 +90,12 @@ bool mac::init(const mac_args_t&        args_,
       8, 8, args.nof_prealloc_ues, init_softbuffers, recycle_softbuffers));
 
   detected_rachs.resize(cells.size());
+  // AO
+  AO_LogsHelper::open_lookup_file(wb_cqi_log_file, WB_CQI_FILE);
+  AO_LogsHelper::open_lookup_file(sb_cqi_log_file, SB_CQI_FILE);
+  AO_LogsHelper::open_lookup_file(pmi_log_file, PMI_LOG_FILE);
+  AO_LogsHelper::open_lookup_file(ri_log_file, RI_LOG_FILE);
+  // AO
 
   started = true;
   return true;
@@ -98,6 +105,11 @@ void mac::stop()
 {
   srsran::rwlock_write_guard lock(rwlock);
   if (started) {
+    AO_LogsHelper::close_lookup_file(wb_cqi_log_file);
+    AO_LogsHelper::close_lookup_file(sb_cqi_log_file);
+    AO_LogsHelper::close_lookup_file(pmi_log_file);
+    AO_LogsHelper::close_lookup_file(ri_log_file);
+
     started = false;
 
     ue_db.clear();
@@ -375,6 +387,13 @@ int mac::ri_info(uint32_t tti, uint16_t rnti, uint32_t enb_cc_idx, uint32_t ri_v
     return SRSRAN_ERROR;
   }
 
+  // AO
+  std::stringstream ss;
+  ss << "0x" << std::hex << rnti << std::dec << "," << enb_cc_idx << "," << ri_value;
+  std::string s = ss.str();
+  AO_LogsHelper::add_time_stamp_line(ri_log_file,s);
+  // AO
+
   scheduler.dl_ri_info(tti, rnti, enb_cc_idx, ri_value);
   ue_db[rnti]->metrics_dl_ri(ri_value);
 
@@ -389,7 +408,12 @@ int mac::pmi_info(uint32_t tti, uint16_t rnti, uint32_t enb_cc_idx, uint32_t pmi
   if (not check_ue_active(rnti)) {
     return SRSRAN_ERROR;
   }
-
+  // AO
+  std::stringstream ss;
+  ss << "0x" << std::hex << rnti << std::dec << "," << enb_cc_idx << "," << pmi_value;
+  std::string s = ss.str();
+  AO_LogsHelper::add_time_stamp_line(pmi_log_file,s);
+  // AO
   scheduler.dl_pmi_info(tti, rnti, enb_cc_idx, pmi_value);
   ue_db[rnti]->metrics_dl_pmi(pmi_value);
 
@@ -404,7 +428,12 @@ int mac::cqi_info(uint32_t tti, uint16_t rnti, uint32_t enb_cc_idx, uint32_t cqi
   if (not check_ue_active(rnti)) {
     return SRSRAN_ERROR;
   }
-
+  // AO
+  std::stringstream ss;
+  ss << "0x" << std::hex << rnti << std::dec << "," << enb_cc_idx << "," << cqi_value;
+  std::string s = ss.str();
+  AO_LogsHelper::add_time_stamp_line(wb_cqi_log_file,s);
+  // AO
   scheduler.dl_cqi_info(tti, rnti, enb_cc_idx, cqi_value);
   ue_db[rnti]->metrics_dl_cqi(cqi_value);
 
@@ -419,7 +448,12 @@ int mac::sb_cqi_info(uint32_t tti, uint16_t rnti, uint32_t enb_cc_idx, uint32_t 
   if (not check_ue_active(rnti)) {
     return SRSRAN_ERROR;
   }
-
+  // AO
+  std::stringstream ss;
+  ss << "0x" << std::hex << rnti << std:: dec << "," << enb_cc_idx << "," << sb_idx  << "," << cqi_value;
+  std::string s = ss.str();
+  AO_LogsHelper::add_time_stamp_line(sb_cqi_log_file,s);
+  // AO
   scheduler.dl_sb_cqi_info(tti, rnti, enb_cc_idx, sb_idx, cqi_value);
   return SRSRAN_SUCCESS;
 }

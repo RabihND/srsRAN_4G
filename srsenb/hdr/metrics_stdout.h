@@ -30,6 +30,7 @@
 #include <pthread.h>
 #include <stdint.h>
 #include <string>
+#include "srsran/AO_general.h"
 
 #include "srsran/interfaces/enb_metrics_interface.h"
 
@@ -46,6 +47,9 @@ public:
   void stop(){};
 
 private:
+  // AO start
+  std::ofstream stdout_pusch_file;
+  // AO end
   void set_metrics_helper(uint32_t num_ue, const mac_metrics_t& mac, const std::vector<phy_metrics_t>& phy, bool is_nr);
   std::string float_to_string(float f, int digits, int field_width = 6);
   std::string float_to_eng_string(float f, int digits);

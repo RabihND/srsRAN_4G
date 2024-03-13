@@ -22,6 +22,7 @@
 #ifndef SRSENB_MAC_H
 #define SRSENB_MAC_H
 
+#include "srsran/AO_general.h"
 #include "sched.h"
 #include "sched_interface.h"
 #include "srsenb/hdr/common/rnti_pool.h"
@@ -115,6 +116,13 @@ public:
                   const uint8_t              mcch_payload_length) override;
 
 private:
+  // AO Start
+  std::ofstream wb_cqi_log_file;
+  std::ofstream sb_cqi_log_file;
+  std::ofstream pmi_log_file;
+  std::ofstream ri_log_file;
+  // AO end
+
   bool     check_ue_active(uint16_t rnti);
   uint16_t allocate_ue(uint32_t enb_cc_idx);
   bool     is_valid_rnti_unprotected(uint16_t rnti);

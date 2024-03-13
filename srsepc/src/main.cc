@@ -390,6 +390,7 @@ int main(int argc, char* argv[])
   cout << endl << get_build_string() << endl;
 
   cout << endl << "---  Software Radio Systems EPC  ---" << endl << endl;
+    cout << endl << "---  Modified Version for CHRONOS  ---" << endl << endl;
   srsran_debug_handle_crash(argc, argv);
 
   all_args_t args = {};

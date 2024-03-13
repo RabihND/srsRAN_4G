@@ -21,6 +21,7 @@
 
 #include "srsenb/hdr/metrics_stdout.h"
 #include "srsran/phy/utils/vector.h"
+#include "srsran/AO_general.h"
 
 #include <float.h>
 #include <iomanip>
@@ -62,7 +63,9 @@ char const* const prefixes[2][9] = {
     },
 };
 
-metrics_stdout::metrics_stdout() : do_print(false), n_reports(10), enb(NULL) {}
+metrics_stdout::metrics_stdout() : do_print(false), n_reports(10), enb(NULL) {
+  AO_LogsHelper::open_lookup_file(stdout_pusch_file, STDOUT_PUSCH_SNR);
+}
 
 void metrics_stdout::set_handle(enb_metrics_interface* enb_)
 {
@@ -137,9 +140,15 @@ void metrics_stdout::set_metrics_helper(uint32_t                          num_ue
       return sinr;
     };
     float pusch_sinr = (is_nr) ? mac.ues[i].pusch_sinr : phy[i].ul.pusch_sinr;
+    // AO start
+    stringstream ss;
+    ss << mac.ues[i].rnti << ",";
+    // AO end
     if (not isnan(pusch_sinr) and not iszero(pusch_sinr)) {
+      ss << pusch_sinr;
       fmt::print(" {:>5.1f}", clamp_sinr(pusch_sinr));
     } else {
+      ss << "n/a";
       fmt::print(" {:>5.5}", "n/a");
     }
     float pucch_sinr = (is_nr) ? mac.ues[i].pucch_sinr : phy[i].ul.pucch_sinr;
@@ -165,6 +174,12 @@ void metrics_stdout::set_metrics_helper(uint32_t                          num_ue
     } else {
       fmt::print(" {:>6}", 0);
     }
+    // AO start
+    ss << "," << mac.ues[i].rx_brate << "," << mac.ues[i].nof_tti << "," 
+      << float_to_eng_string((float)mac.ues[i].rx_brate / (mac.ues[i].nof_tti * 1e-3), 1);
+    std::string s = ss.str();
+    AO_LogsHelper::add_time_stamp_line(stdout_pusch_file, s);
+    // AO end
     fmt::print(" {:>4}", mac.ues[i].rx_pkts - mac.ues[i].rx_errors);
     fmt::print(" {:>4}", mac.ues[i].rx_errors);
 

@@ -26,6 +26,7 @@
 
 #include "../phy_common.h"
 #include "srsran/srslog/srslog.h"
+#include "srsran/AO_general.h"
 
 #define LOG_EXECTIME
 
@@ -64,6 +65,10 @@ public:
   uint32_t get_metrics(std::vector<phy_metrics_t>& metrics);
 
 private:
+  // AO start
+  std::ofstream pusch_snr_file;
+  std::ofstream pucch_snr_file;
+  // AO end
   constexpr static float PUSCH_RL_SNR_DB_TH = 1.0f;
   constexpr static float PUCCH_RL_CORR_TH   = 0.15f;
 
